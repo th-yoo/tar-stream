@@ -2,6 +2,7 @@ var ZEROS = '0000000000000000000'
 var SEVENS = '7777777777777777777'
 var ZERO_OFFSET = '0'.charCodeAt(0)
 var USTAR = 'ustar\x0000'
+var USTAR_GNU = 'ustar  '
 var MASK = parseInt('7777', 8)
 
 var clamp = function (index, len, defaultValue) {
@@ -95,6 +96,12 @@ var encodeOct = function (val, n) {
   val = val.toString(8)
   if (val.length > n) return SEVENS.slice(0, n) + ' '
   else return ZEROS.slice(0, n - val.length) + val + ' '
+}
+
+var encodeOctGNU = function (val, n) {
+  val = val.toString(8)
+  if (val.length > n) return SEVENS.slice(0, n)
+  else return ZEROS.slice(0, n - val.length) + val
 }
 
 /* Copied from the node-tar repo and modified to meet
@@ -214,25 +221,49 @@ exports.encode = function (opts) {
   if (opts.linkname && Buffer.byteLength(opts.linkname) > 100) return null
 
   buf.write(name)
+  if (false) {
   buf.write(encodeOct(opts.mode & MASK, 6), 100)
   buf.write(encodeOct(opts.uid, 6), 108)
   buf.write(encodeOct(opts.gid, 6), 116)
   buf.write(encodeOct(opts.size, 11), 124)
   buf.write(encodeOct((opts.mtime.getTime() / 1000) | 0, 11), 136)
+  }
+  else {
+  buf.write(encodeOctGNU(opts.mode & MASK, 7), 100)
+  buf.write(encodeOctGNU(opts.uid, 7), 108)
+  buf.write(encodeOctGNU(opts.gid, 7), 116)
+  buf.write(encodeOctGNU(opts.size, 11), 124)
+  buf.write(encodeOctGNU((opts.mtime.getTime() / 1000) | 0, 11), 136)
+  }
 
   buf[156] = ZERO_OFFSET + toTypeflag(opts.type)
 
   if (opts.linkname) buf.write(opts.linkname, 157)
 
+  if (false) {
   buf.write(USTAR, 257)
+  }
+  else {
+  buf.write(USTAR_GNU, 257)
+  }
   if (opts.uname) buf.write(opts.uname, 265)
   if (opts.gname) buf.write(opts.gname, 297)
+  if (false) {
   buf.write(encodeOct(opts.devmajor || 0, 6), 329)
   buf.write(encodeOct(opts.devminor || 0, 6), 337)
+  }
+  else {
+	  // POSIX GNU fills all zeros
+  }
 
   if (prefix) buf.write(prefix, 345)
 
+  if (false) {
   buf.write(encodeOct(cksum(buf), 6), 148)
+  }
+  else {
+  buf.write(encodeOctGNU(cksum(buf), 7), 148)
+  }
 
   return buf
 }

@@ -1,4 +1,6 @@
 # tar-stream
+Pack generates tar stream in POSIX GNU format.
+My old good busybox doesn't understand POSIX tar. 
 
 tar-stream is a streaming tar parser and generator and nothing else. It is streams2 and operates purely using streams which means you can easily extract/parse tarballs without ever hitting the file system.
 
